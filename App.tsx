@@ -1252,34 +1252,9 @@ export default function App() {
                         required: ['phoneNumber', 'message'],
                     },
                 };
-
-                 const sendEmailFunctionDeclaration: FunctionDeclaration = {
-                    name: 'enviar_notificacion_email',
-                    description: 'Envía una notificación por correo electrónico al administrador sobre una nueva reserva de cita.',
-                    parameters: {
-                        type: Type.OBJECT,
-                        properties: {
-                            recipientEmail: {
-                                type: Type.STRING,
-                                description: "La dirección de correo electrónico del administrador (p. ej., admin@barbershop-abde.com).",
-                            },
-                            subject: {
-                                type: Type.STRING,
-                                description: 'La línea de asunto del correo electrónico.',
-                            },
-                            body: {
-                                type: Type.STRING,
-                                description: 'El contenido del cuerpo del correo electrónico, que puede incluir HTML.',
-                            },
-                        },
-                        required: ['recipientEmail', 'subject', 'body'],
-                    },
-                };
     
                 const displayDate = formatDisplayDate(selectedDate);
-                const prompt = `Se ha reservado una nueva cita. Realiza las siguientes dos acciones:
-1. Envía un SMS de confirmación al cliente al número de teléfono '${newAppointment.customerPhone}'. El mensaje debe ser amigable, en español, incluir todos los detalles de la cita, y recordar al cliente que llame al 614229897 para cancelar si es necesario. Asegúrate de formatear el número de teléfono al formato internacional para España (prefijo +34).
-2. Envía una notificación por correo electrónico al administrador a 'abderabbibenaamir@gmail.com'. El asunto debe ser 'Nueva Cita Reservada'. El cuerpo del correo debe contener todos los detalles de la nueva cita de forma clara.
+                const prompt = `Se ha reservado una nueva cita. Envía un SMS de confirmación al cliente al número de teléfono '${newAppointment.customerPhone}'. El mensaje debe ser amigable, en español, incluir todos los detalles de la cita, y recordar al cliente que llame al 614229897 para cancelar si es necesario. Asegúrate de formatear el número de teléfono al formato internacional para España (prefijo +34).
 
 Detalles de la cita:
 - Nombre: ${newAppointment.customerName}
@@ -1289,32 +1264,26 @@ Detalles de la cita:
 - Barbero: ${newAppointment.barber}
 - Servicio: ${newAppointment.service}`;
                 
-                // FIX: Add explicit 'GenerateContentResponse' type to ensure 'response.functionCalls' is correctly typed as an array.
                 const response: GenerateContentResponse = await ai.models.generateContent({
                     model: 'gemini-2.5-flash',
                     contents: prompt,
                     config: {
-                        tools: [{ functionDeclarations: [sendSmsFunctionDeclaration, sendEmailFunctionDeclaration] }],
+                        tools: [{ functionDeclarations: [sendSmsFunctionDeclaration] }],
                     },
                 });
     
-                if (response.functionCalls && response.functionCalls.length > 0) {
-                    // FIX: Changed for...of loop to forEach to align with the error message "Property 'forEach' does not exist on type 'unknown'".
-                    // This can resolve subtle type inference issues or linter conflicts.
-                    response.functionCalls.forEach((functionCall) => {
+                // Fix: The `functionCalls` property may be undefined or empty.
+                // Check if it's an array with items before iterating.
+                const functionCalls = response.functionCalls;
+                if (Array.isArray(functionCalls) && functionCalls.length > 0) {
+                    for (const functionCall of functionCalls) {
                         if (functionCall.name === 'enviar_sms') {
                             console.log('--- SIMULANDO ENVÍO DE SMS ---');
                             console.log(`Para: ${functionCall.args.phoneNumber}`);
                             console.log(`Mensaje: ${functionCall.args.message}`);
                             console.log('-----------------------------');
-                        } else if (functionCall.name === 'enviar_notificacion_email') {
-                            console.log('--- SIMULANDO ENVÍO DE EMAIL ---');
-                            console.log(`Para: ${functionCall.args.recipientEmail}`);
-                            console.log(`Asunto: ${functionCall.args.subject}`);
-                            console.log(`Cuerpo: ${functionCall.args.body}`);
-                            console.log('-------------------------------');
                         }
-                    });
+                    }
                 } else {
                      console.log("Gemini no devolvió una llamada a función para notificaciones. Respuesta de texto:", response.text);
                 }

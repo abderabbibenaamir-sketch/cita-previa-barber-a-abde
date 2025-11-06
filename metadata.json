@@ -1,0 +1,5 @@
+{
+  "name": "Reservas Barbershop-Abde",
+  "description": "Una aplicación sencilla para reservar citas en Barbershop-Abde. Selecciona una fecha y hora, introduce tus datos y confirma tu cita.",
+  "requestFramePermissions": []
+}
